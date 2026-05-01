@@ -31,22 +31,50 @@
         <p class="auth-copy">
           Gestiona ingresos, gastos, cuentas, movimientos y reportes desde una PWA mobile first inspirada en fintech modernas.
         </p>
-        <form id="authForm" class="auth-form">
-          <label class="field">
-            <span>Nombre</span>
-            <input id="authName" name="name" type="text" placeholder="Alex Rivera" autocomplete="name" />
-          </label>
+        <div id="authTabs" class="auth-tabs" role="tablist" aria-label="Acceso">
+          <button id="authTabLogin" class="auth-tab is-active" type="button" data-action="show-login" aria-selected="true">Iniciar sesion</button>
+          <button id="authTabRegister" class="auth-tab" type="button" data-action="show-register" aria-selected="false">Registrarse</button>
+        </div>
+
+        <form id="authLoginForm" class="auth-form">
           <label class="field">
             <span>Correo</span>
-            <input id="authEmail" name="email" type="email" placeholder="alex@email.com" autocomplete="email" />
+            <input id="loginEmail" name="email" type="email" placeholder="alex@email.com" autocomplete="email" />
           </label>
           <label class="field">
             <span>Contrasena</span>
-            <input id="authPassword" name="password" type="password" placeholder="********" autocomplete="current-password" />
+            <input id="loginPassword" name="password" type="password" placeholder="********" autocomplete="current-password" />
           </label>
           <div class="auth-actions">
-            <button type="button" class="btn btn-primary" data-action="sign-in">Entrar</button>
-            <button type="button" class="btn btn-secondary" data-action="register">Crear cuenta</button>
+            <button type="button" class="btn btn-primary" data-action="sign-in">Entrar a Dashboard Pro</button>
+            <button type="button" class="btn btn-ghost" data-action="continue-local">Modo demo</button>
+          </div>
+        </form>
+
+        <form id="authRegisterForm" class="auth-form hidden">
+          <div class="auth-photo-field">
+            <div id="registerPhotoPreview" class="auth-photo-preview">AR</div>
+            <div class="auth-photo-copy">
+              <strong>Foto de perfil</strong>
+              <p>Carga una imagen. La app la comprime automaticamente antes de guardarla.</p>
+              <label class="btn btn-secondary auth-upload-btn" for="registerPhoto">Seleccionar imagen</label>
+              <input id="registerPhoto" name="photo" type="file" accept="image/*" hidden />
+            </div>
+          </div>
+          <label class="field">
+            <span>Nombre</span>
+            <input id="registerName" name="name" type="text" placeholder="Alex Rivera" autocomplete="name" />
+          </label>
+          <label class="field">
+            <span>Correo</span>
+            <input id="registerEmail" name="email" type="email" placeholder="alex@email.com" autocomplete="email" />
+          </label>
+          <label class="field">
+            <span>Contrasena</span>
+            <input id="registerPassword" name="password" type="password" placeholder="********" autocomplete="new-password" />
+          </label>
+          <div class="auth-actions">
+            <button type="button" class="btn btn-primary" data-action="register">Crear cuenta nueva</button>
             <button type="button" class="btn btn-ghost" data-action="continue-local">Modo demo</button>
           </div>
         </form>
@@ -97,22 +125,22 @@
 
       <nav class="tab-bar" aria-label="Navegacion principal">
         <button class="tab-btn is-active" type="button" data-view="home">
-          <span class="tab-icon">01</span>
+          <span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M4 10.5L12 4l8 6.5V20a1 1 0 0 1-1 1h-4.5v-5.5h-5V21H5a1 1 0 0 1-1-1v-9.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span>
           <span>Resumen</span>
         </button>
         <button class="tab-btn" type="button" data-view="transactions">
-          <span class="tab-icon">02</span>
+          <span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M8 7h11M8 12h11M8 17h11M4.5 7h.01M4.5 12h.01M4.5 17h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
           <span>Transacciones</span>
         </button>
         <button class="tab-fab" type="button" data-action="open-quick-action" aria-label="Nuevo movimiento">
           <span>+</span>
         </button>
         <button class="tab-btn" type="button" data-view="accounts">
-          <span class="tab-icon">03</span>
+          <span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M3 8.5A2.5 2.5 0 0 1 5.5 6h13A2.5 2.5 0 0 1 21 8.5v7A2.5 2.5 0 0 1 18.5 18h-13A2.5 2.5 0 0 1 3 15.5v-7Z" stroke="currentColor" stroke-width="1.8"/><path d="M3 10h18M15.5 14h2.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
           <span>Cuentas</span>
         </button>
         <button class="tab-btn" type="button" data-view="profile">
-          <span class="tab-icon">04</span>
+          <span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM5 20a7 7 0 0 1 14 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
           <span>Perfil</span>
         </button>
       </nav>
@@ -144,7 +172,7 @@
         </button>
         <button class="action-card action-account" type="button" data-action="open-account-form">
           <strong>Nueva cuenta</strong>
-          <span>Agrega efectivo, banco o tarjeta</span>
+          <span>Agrega efectivo, debito o tarjeta de credito</span>
         </button>
       </div>
     </section>
@@ -153,7 +181,7 @@
       <div class="sheet-handle"></div>
       <div class="sheet-header">
         <div>
-          <p class="eyebrow">Pantalla 4</p>
+          <p class="eyebrow">Gastos</p>
           <h2 id="expenseSheetTitle">Nuevo gasto</h2>
         </div>
         <button class="icon-btn" type="button" data-action="close-sheet" aria-label="Cerrar">X</button>
@@ -203,7 +231,7 @@
       <div class="sheet-handle"></div>
       <div class="sheet-header">
         <div>
-          <p class="eyebrow">Pantalla 5</p>
+          <p class="eyebrow">Ingresos</p>
           <h2 id="incomeSheetTitle">Nuevo ingreso</h2>
         </div>
         <button class="icon-btn" type="button" data-action="close-sheet" aria-label="Cerrar">X</button>
@@ -246,7 +274,7 @@
       <div class="sheet-handle"></div>
       <div class="sheet-header">
         <div>
-          <p class="eyebrow">Pantalla 6</p>
+          <p class="eyebrow">Movimientos</p>
           <h2 id="transferSheetTitle">Nuevo movimiento</h2>
         </div>
         <button class="icon-btn" type="button" data-action="close-sheet" aria-label="Cerrar">X</button>
@@ -323,6 +351,17 @@
             <input name="creditLimit" type="number" step="0.01" placeholder="0.00" />
           </label>
         </div>
+        <div class="form-grid">
+          <label class="field">
+            <span>Fecha de corte</span>
+            <input name="statementDay" type="number" min="1" max="31" placeholder="7" />
+          </label>
+          <label class="field">
+            <span>Fecha de pago</span>
+            <input name="paymentDay" type="number" min="1" max="31" placeholder="23" />
+          </label>
+        </div>
+        <p class="helper-note">Las fechas de corte y pago se usan para recordatorios de tarjetas de credito cuando la app esta abierta.</p>
         <button id="accountSubmitButton" class="btn btn-primary btn-block" type="submit">Guardar cuenta</button>
       </form>
     </section>
@@ -330,7 +369,7 @@
     <section id="reportsSheet" class="sheet full-screen">
       <div class="sheet-header sticky-header">
         <div>
-          <p class="eyebrow">Pantalla 7 y 12</p>
+          <p class="eyebrow">Reportes y 12</p>
           <h2>Reportes</h2>
         </div>
         <div class="header-actions">
@@ -353,7 +392,7 @@
     <section id="accountDetailSheet" class="sheet full-screen">
       <div class="sheet-header sticky-header">
         <div>
-          <p class="eyebrow">Pantalla 8</p>
+          <p class="eyebrow">Cuenta</p>
           <h2>Detalle de cuenta</h2>
         </div>
         <button class="icon-btn" type="button" data-action="close-sheet" aria-label="Cerrar">X</button>
@@ -375,7 +414,7 @@
     <section id="personalizationSheet" class="sheet full-screen">
       <div class="sheet-header sticky-header">
         <div>
-          <p class="eyebrow">Pantalla 10</p>
+          <p class="eyebrow">Personalizacion</p>
           <h2>Personalizacion</h2>
         </div>
         <button class="icon-btn" type="button" data-action="close-sheet" aria-label="Cerrar">X</button>
@@ -416,7 +455,7 @@
     <section id="backupSheet" class="sheet full-screen">
       <div class="sheet-header sticky-header">
         <div>
-          <p class="eyebrow">Pantalla 11</p>
+          <p class="eyebrow">Backups</p>
           <h2>Backup y restauracion</h2>
         </div>
         <button class="icon-btn" type="button" data-action="close-sheet" aria-label="Cerrar">X</button>
@@ -494,3 +533,7 @@
     <script type="module" src="./js/app.js"></script>
   </body>
 </html>
+
+
+
+

@@ -42,6 +42,12 @@ const expenseSubmitButton = document.getElementById('expenseSubmitButton');
 const incomeSubmitButton = document.getElementById('incomeSubmitButton');
 const transferSubmitButton = document.getElementById('transferSubmitButton');
 const accountSubmitButton = document.getElementById('accountSubmitButton');
+const registerPhotoInput = document.getElementById('registerPhoto');
+const loginEmailInput = document.getElementById('loginEmail');
+const loginPasswordInput = document.getElementById('loginPassword');
+const registerNameInput = document.getElementById('registerName');
+const registerEmailInput = document.getElementById('registerEmail');
+const registerPasswordInput = document.getElementById('registerPassword');
 
 const state = {
   sessionActive: false,
@@ -56,6 +62,9 @@ const state = {
     activeView: 'home',
     activeSheet: null,
     authPromptOpen: false,
+    authMode: 'login',
+    pendingProfileImage: '',
+    pendingRegistration: null,
     txFilter: 'all',
     selectedMonth: monthKey(),
     loading: true,
@@ -68,6 +77,140 @@ const state = {
 
 let inactivityTimer = 0;
 let loadingFinished = false;
+function getProfileInitials(value = '') {
+  return String(value)
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join('') || 'DP';
+}
+
+function compressImageFile(file, maxSide = 320, quality = 0.78) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const image = new Image();
+      image.onload = () => {
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        let { width, height } = image;
+        if (width > height && width > maxSide) {
+          height = Math.round((height * maxSide) / width);
+          width = maxSide;
+        } else if (height >= width && height > maxSide) {
+          width = Math.round((width * maxSide) / height);
+          height = maxSide;
+        }
+        canvas.width = width;
+        canvas.height = height;
+        context.drawImage(image, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      image.onerror = reject;
+      image.src = reader.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function refreshRegisterPreview() {
+  if (!refs.registerPhotoPreview) {
+    return;
+  }
+  if (state.ui.pendingProfileImage) {
+    refs.registerPhotoPreview.classList.add('has-image');
+    refs.registerPhotoPreview.innerHTML = `<img src="${state.ui.pendingProfileImage}" alt="Vista previa del perfil" />`;
+    return;
+  }
+  refs.registerPhotoPreview.classList.remove('has-image');
+  refs.registerPhotoPreview.textContent = getProfileInitials(registerNameInput?.value || 'Dashboard Pro');
+}
+
+function syncAccountBillingFields() {
+  const accountType = refs.accountForm?.elements.type?.value;
+  const statementField = refs.accountForm?.elements.statementDay;
+  const paymentField = refs.accountForm?.elements.paymentDay;
+  const creditLimitField = refs.accountForm?.elements.creditLimit;
+  const enabled = accountType === 'credit';
+
+  if (!statementField || !paymentField || !creditLimitField) {
+    return;
+  }
+
+  statementField.disabled = !enabled;
+  paymentField.disabled = !enabled;
+  creditLimitField.disabled = !enabled;
+  statementField.required = enabled;
+  paymentField.required = enabled;
+  creditLimitField.required = enabled;
+
+  if (!enabled) {
+    statementField.value = '';
+    paymentField.value = '';
+    creditLimitField.value = '';
+  }
+}
+
+function reminderStorageKey() {
+  return `dashboard-pro:reminders:${todayISO()}`;
+}
+
+function triggerBrowserNotification(title, body) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') {
+    return;
+  }
+  new Notification(title, { body, icon: './assets/icon-192.svg' });
+}
+
+function checkCreditReminders() {
+  if (!state.sessionActive) {
+    return;
+  }
+  const today = new Date();
+  const currentDay = today.getDate();
+  const reminded = JSON.parse(localStorage.getItem(reminderStorageKey()) || '[]');
+  const nextReminded = [...reminded];
+
+  state.snapshot.accounts
+    .filter((account) => account.type === 'credit')
+    .forEach((account) => {
+      const reminders = [];
+      if (account.statementDay && account.statementDay === currentDay) {
+        reminders.push({ id: `${account.id}-statement`, message: `Hoy es el corte de ${account.name}.` });
+      }
+      if (account.paymentDay && account.paymentDay === currentDay) {
+        reminders.push({ id: `${account.id}-payment`, message: `Hoy vence el pago de ${account.name}.` });
+      }
+      if (account.paymentDay && account.paymentDay - currentDay === 3) {
+        reminders.push({ id: `${account.id}-payment-soon`, message: `Faltan 3 dias para pagar ${account.name}.` });
+      }
+
+      reminders.forEach((reminder) => {
+        if (nextReminded.includes(reminder.id)) {
+          return;
+        }
+        nextReminded.push(reminder.id);
+        showToast(refs, reminder.message, 'info');
+        triggerBrowserNotification('Dashboard Pro', reminder.message);
+      });
+    });
+
+  localStorage.setItem(reminderStorageKey(), JSON.stringify(nextReminded));
+}
+
+async function ensureNotificationPermission() {
+  if (!('Notification' in window) || Notification.permission !== 'default') {
+    return;
+  }
+  try {
+    await Notification.requestPermission();
+  } catch {
+    // ignore permission errors
+  }
+}
 
 function render() {
   renderApp(refs, state);
@@ -80,7 +223,8 @@ function currentSessionId() {
 function currentUserSeed() {
   return {
     name: state.auth.user?.name || state.snapshot.user?.name || 'Alex Rivera',
-    email: state.auth.user?.email || state.snapshot.user?.email || 'alex@dashboardpro.app'
+    email: state.auth.user?.email || state.snapshot.user?.email || 'alex@dashboardpro.app',
+    photo: state.auth.user?.photo || state.snapshot.user?.photo || state.ui.pendingProfileImage || ''
   };
 }
 
@@ -110,10 +254,12 @@ function commitSnapshot(mutator, successMessage = '', tone = 'info') {
   state.snapshot = normalizeSnapshot(state.snapshot, currentUserSeed());
   state.auth.user = {
     name: state.snapshot.user.name,
-    email: state.snapshot.user.email
+    email: state.snapshot.user.email,
+    photo: state.snapshot.user.photo || ''
   };
   persistSnapshot();
   render();
+  checkCreditReminders();
   if (successMessage) {
     showToast(refs, successMessage, tone);
   }
@@ -149,22 +295,28 @@ function startLocalSession(userSeed = {}) {
   state.snapshot = existing || createSampleSnapshot(userSeed);
   state.auth.user = {
     name: state.snapshot.user.name,
-    email: state.snapshot.user.email
+    email: state.snapshot.user.email,
+    photo: state.snapshot.user.photo || ''
   };
   state.sessionActive = true;
   state.ui.authPromptOpen = false;
+  state.ui.authMode = 'login';
+  state.ui.pendingRegistration = null;
   state.ui.activeSheet = null;
   saveSession({ mode: 'local' });
   persistSnapshot();
   finishLoading();
   resetInactivityTimer();
   render();
+  checkCreditReminders();
 }
 
 function activateFirebaseSession(user) {
+  const pendingRegistration = state.ui.pendingRegistration || {};
   const userSeed = {
-    name: user.displayName || user.email?.split('@')[0] || 'Usuario',
-    email: user.email || ''
+    name: user.displayName || pendingRegistration.name || user.email?.split('@')[0] || 'Usuario',
+    email: user.email || pendingRegistration.email || '',
+    photo: user.photoURL || pendingRegistration.photo || ''
   };
   const cached = loadSnapshotFromLocal(user.uid, userSeed);
   state.auth.mode = 'firebase';
@@ -173,10 +325,12 @@ function activateFirebaseSession(user) {
   state.snapshot = cached || createSampleSnapshot(userSeed);
   state.sessionActive = true;
   state.ui.authPromptOpen = false;
+  state.ui.pendingRegistration = null;
   saveSession({ mode: 'firebase', uid: user.uid });
   finishLoading();
   resetInactivityTimer();
   render();
+  checkCreditReminders();
 }
 
 function applyRemoteSnapshot(snapshot) {
@@ -188,16 +342,19 @@ function applyRemoteSnapshot(snapshot) {
     persistSnapshot();
     showToast(refs, 'Firebase quedo listo con una base inicial nueva para este proyecto.', 'success');
     render();
+    checkCreditReminders();
     return;
   }
   state.snapshot = normalizeSnapshot(snapshot, currentUserSeed());
   state.auth.user = {
     name: state.snapshot.user.name,
-    email: state.snapshot.user.email
+    email: state.snapshot.user.email,
+    photo: state.snapshot.user.photo || ''
   };
   saveSnapshotToLocal(currentSessionId(), state.snapshot);
   finishLoading();
   render();
+  checkCreditReminders();
 }
 
 async function handleLogout(fromInactivity = false) {
@@ -205,6 +362,15 @@ async function handleLogout(fromInactivity = false) {
   state.ui.activeSheet = null;
   state.ui.pendingDanger = null;
   state.ui.authPromptOpen = false;
+  state.ui.authMode = 'login';
+  state.ui.pendingRegistration = null;
+  state.ui.pendingProfileImage = '';
+  if (registerPhotoInput) {
+    registerPhotoInput.value = '';
+  }
+  refs.authLoginForm?.reset();
+  refs.authRegisterForm?.reset();
+  refreshRegisterPreview();
   if (state.auth.mode === 'firebase' && state.auth.firebaseUser) {
     try {
       await signOutCurrentUser();
@@ -215,6 +381,7 @@ async function handleLogout(fromInactivity = false) {
   clearSession();
   state.sessionActive = false;
   state.auth.firebaseUser = null;
+  state.auth.user = null;
   if (!fromInactivity) {
     showToast(refs, 'Sesion cerrada.', 'info');
   }
@@ -302,10 +469,13 @@ function prepareAccountForm(account = null) {
   refs.accountForm.elements.id.value = account?.id || '';
   refs.accountForm.elements.name.value = account?.name || '';
   refs.accountForm.elements.institution.value = account?.institution || '';
-  refs.accountForm.elements.type.value = account?.type || refs.accountTypeSelect.options[0]?.value || 'bank';
+  refs.accountForm.elements.type.value = account?.type || refs.accountTypeSelect.options[0]?.value || 'debit';
   refs.accountForm.elements.last4.value = account?.last4 || '';
   refs.accountForm.elements.openingBalance.value = account?.openingBalance ?? '';
   refs.accountForm.elements.creditLimit.value = account?.creditLimit ?? '';
+  refs.accountForm.elements.statementDay.value = account?.statementDay ?? '';
+  refs.accountForm.elements.paymentDay.value = account?.paymentDay ?? '';
+  syncAccountBillingFields();
 }
 function queueDanger(type, id = '') {
   state.ui.pendingDanger = { type, id };
@@ -462,17 +632,20 @@ function handleTransferSubmit(event) {
   closeSheet();
 }
 
-function handleAccountSubmit(event) {
+async function handleAccountSubmit(event) {
   event.preventDefault();
   const form = event.currentTarget;
+  const type = form.elements.type.value;
   const payload = {
     id: form.elements.id.value || uid('acc'),
     name: form.elements.name.value.trim(),
     institution: form.elements.institution.value.trim(),
-    type: form.elements.type.value,
+    type,
     last4: form.elements.last4.value.trim(),
     openingBalance: safeNumber(form.elements.openingBalance.value),
-    creditLimit: safeNumber(form.elements.creditLimit.value)
+    creditLimit: type === 'credit' ? safeNumber(form.elements.creditLimit.value) : 0,
+    statementDay: type === 'credit' ? safeNumber(form.elements.statementDay.value) : 0,
+    paymentDay: type === 'credit' ? safeNumber(form.elements.paymentDay.value) : 0
   };
   const isEdit = Boolean(form.elements.id.value);
   commitSnapshot((snapshot) => {
@@ -483,6 +656,9 @@ function handleAccountSubmit(event) {
       snapshot.accounts.push(payload);
     }
   }, isEdit ? 'Cuenta actualizada.' : 'Cuenta creada.', 'success');
+  if (payload.type === 'credit' && payload.statementDay && payload.paymentDay) {
+    await ensureNotificationPermission();
+  }
   closeSheet();
 }
 
@@ -551,7 +727,19 @@ async function handleAction(action, element) {
     return;
   }
   if (action === 'open-auth-gate') {
+    state.ui.authMode = 'login';
     state.ui.authPromptOpen = true;
+    render();
+    return;
+  }
+  if (action === 'show-login') {
+    state.ui.authMode = 'login';
+    render();
+    return;
+  }
+  if (action === 'show-register') {
+    state.ui.authMode = 'register';
+    refreshRegisterPreview();
     render();
     return;
   }
@@ -605,33 +793,52 @@ async function handleAction(action, element) {
     return;
   }
   if (action === 'continue-local') {
-    const name = document.getElementById('authName').value.trim() || 'Alex Rivera';
-    const email = document.getElementById('authEmail').value.trim() || 'alex@dashboardpro.app';
-    startLocalSession({ name, email });
+    const sourceName = state.ui.authMode === 'register' ? registerNameInput.value.trim() : (loginEmailInput.value.split('@')[0] || '').trim();
+    const sourceEmail = state.ui.authMode === 'register' ? registerEmailInput.value.trim() : loginEmailInput.value.trim();
+    startLocalSession({
+      name: sourceName || 'Alex Rivera',
+      email: sourceEmail || 'alex@dashboardpro.app',
+      photo: state.ui.pendingProfileImage || ''
+    });
     return;
   }
-  if (action === 'sign-in' || action === 'register') {
+  if (action === 'sign-in') {
     if (!state.auth.cloudAvailable) {
       showToast(refs, 'Configura un nuevo proyecto de Firebase antes de iniciar sesion en la nube.', 'danger');
       return;
     }
-    const name = document.getElementById('authName').value.trim();
-    const email = document.getElementById('authEmail').value.trim();
-    const password = document.getElementById('authPassword').value.trim();
-    if (!email || !password || (action === 'register' && !name)) {
-      showToast(refs, 'Completa los datos requeridos para continuar.', 'danger');
+    const email = loginEmailInput.value.trim();
+    const password = loginPasswordInput.value.trim();
+    if (!email || !password) {
+      showToast(refs, 'Completa correo y contrasena para iniciar sesion.', 'danger');
       return;
     }
     try {
-      if (action === 'sign-in') {
-        await signInWithEmailPassword(email, password);
-        showToast(refs, 'Sesion iniciada correctamente.', 'success');
-      } else {
-        await registerWithEmailPassword(name, email, password);
-        showToast(refs, 'Cuenta creada en tu nuevo proyecto Firebase.', 'success');
-      }
+      await signInWithEmailPassword(email, password);
+      showToast(refs, 'Sesion iniciada correctamente.', 'success');
     } catch (error) {
-      showToast(refs, error.message || 'No fue posible completar la operacion.', 'danger');
+      showToast(refs, error.message || 'No fue posible iniciar sesion.', 'danger');
+    }
+    return;
+  }
+  if (action === 'register') {
+    if (!state.auth.cloudAvailable) {
+      showToast(refs, 'Configura un nuevo proyecto de Firebase antes de registrar usuarios.', 'danger');
+      return;
+    }
+    const name = registerNameInput.value.trim();
+    const email = registerEmailInput.value.trim();
+    const password = registerPasswordInput.value.trim();
+    if (!name || !email || !password) {
+      showToast(refs, 'Completa nombre, correo y contrasena para registrarte.', 'danger');
+      return;
+    }
+    state.ui.pendingRegistration = { name, email, photo: state.ui.pendingProfileImage || '' };
+    try {
+      await registerWithEmailPassword(name, email, password, state.ui.pendingProfileImage || '');
+      showToast(refs, 'Cuenta creada en tu nuevo proyecto Firebase.', 'success');
+    } catch (error) {
+      showToast(refs, error.message || 'No fue posible completar el registro.', 'danger');
     }
   }
 }
@@ -690,6 +897,11 @@ function bindEvents() {
   document.addEventListener('pointerdown', resetInactivityTimer);
   document.addEventListener('keydown', resetInactivityTimer);
   document.addEventListener('touchstart', resetInactivityTimer, { passive: true });
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      checkCreditReminders();
+    }
+  });
 
   refs.expenseForm.addEventListener('submit', handleExpenseSubmit);
   refs.incomeForm.addEventListener('submit', handleIncomeSubmit);
@@ -704,6 +916,21 @@ function bindEvents() {
     state.snapshot.settings.theme = refs.themeSwitch.checked ? 'dark' : 'light';
     persistSnapshot();
     render();
+  });
+  refs.accountForm.elements.type.addEventListener('change', syncAccountBillingFields);
+  registerNameInput.addEventListener('input', refreshRegisterPreview);
+  registerPhotoInput.addEventListener('change', async (event) => {
+    const [file] = event.target.files || [];
+    if (!file) {
+      return;
+    }
+    try {
+      state.ui.pendingProfileImage = await compressImageFile(file);
+      refreshRegisterPreview();
+      showToast(refs, 'Imagen comprimida y lista para el perfil.', 'success');
+    } catch {
+      showToast(refs, 'No fue posible procesar la imagen seleccionada.', 'danger');
+    }
   });
 
   createBackupButton.addEventListener('click', () => {
@@ -759,6 +986,9 @@ function bindEvents() {
 
 async function boot() {
   bindEvents();
+  refreshRegisterPreview();
+  syncAccountBillingFields();
+  window.setInterval(checkCreditReminders, 60000);
   render();
 
   if ('serviceWorker' in navigator) {
@@ -810,3 +1040,15 @@ async function boot() {
 }
 
 boot();
+
+
+
+
+
+
+
+
+
+
+
+

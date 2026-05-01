@@ -806,7 +806,8 @@ body[data-theme='dark'] .account-card {
   background: linear-gradient(160deg, rgba(18, 31, 54, 0.98), rgba(10, 19, 33, 0.92));
 }
 
-.account-card.bank {
+.account-card.bank,
+.account-card.debit {
   border-left: 4px solid var(--primary);
 }
 
@@ -1457,4 +1458,474 @@ th {
 .profile-meta {
   display: grid;
   gap: 4px;
+}
+
+.auth-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 8px;
+  border-radius: 22px;
+  background: rgba(38, 103, 255, 0.08);
+}
+
+.auth-tab {
+  border: none;
+  border-radius: 16px;
+  padding: 12px 14px;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.auth-tab.is-active {
+  background: var(--surface-strong);
+  color: var(--primary);
+  box-shadow: 0 12px 24px rgba(24, 39, 75, 0.08);
+}
+
+.auth-photo-field {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 16px;
+  align-items: center;
+}
+
+.auth-photo-copy {
+  display: grid;
+  gap: 8px;
+}
+
+.auth-photo-copy p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.auth-upload-btn {
+  width: fit-content;
+}
+
+.auth-photo-preview,
+.profile-photo {
+  width: 76px;
+  height: 76px;
+  border-radius: 24px;
+}
+
+.auth-photo-preview {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  font-weight: 800;
+  font-size: 1.2rem;
+  color: #fff;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  box-shadow: 0 18px 40px rgba(38, 103, 255, 0.22);
+}
+
+.auth-photo-preview img,
+.profile-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.auth-shell-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 11, 20, 0.54);
+  backdrop-filter: blur(12px);
+  z-index: 30;
+}
+
+.tab-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.tab-btn,
+.tab-fab,
+.auth-tab,
+.auth-actions .btn,
+.header-actions > *,
+.account-card,
+.mini-account-card,
+.option-row,
+.tx-item {
+  min-width: 0;
+}
+
+.auth-actions,
+.backup-actions,
+.detail-actions,
+.profile-pills,
+.header-actions,
+.tx-toolbar,
+.account-section-head,
+.section-head,
+.account-card-header,
+.account-foot,
+.auth-brand {
+  flex-wrap: wrap;
+}
+
+.brand-card {
+  position: relative;
+  overflow: hidden;
+  color: #fff;
+  background: linear-gradient(145deg, var(--brand-start), var(--brand-end));
+  box-shadow: 0 24px 48px rgba(24, 39, 75, 0.18);
+}
+
+.brand-card::before {
+  content: '';
+  position: absolute;
+  inset: auto -40px -60px auto;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.brand-card::after {
+  content: '';
+  position: absolute;
+  inset: 18px 18px auto auto;
+  width: 74px;
+  height: 74px;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.brand-card .account-balance,
+.brand-card strong,
+.brand-card span,
+.brand-card small,
+.brand-card b,
+.brand-card .account-pill,
+.brand-card .brand-logo,
+.brand-card .brand-logo span {
+  color: #fff;
+}
+
+.brand-card .account-pill,
+.mini-card-chip {
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.brand-card .account-balance.tone-expense,
+.brand-card .account-balance.tone-income {
+  color: #fff;
+}
+
+.brand-logo,
+.brand-logo-bbva,
+.brand-logo-santander,
+.brand-logo-banamex,
+.brand-logo-nu {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.brand-logo svg {
+  width: 20px;
+  height: 20px;
+}
+
+.brand-logo-bbva span {
+  letter-spacing: 0.08em;
+}
+
+.brand-logo-nu {
+  width: 48px;
+  height: 48px;
+  justify-content: center;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.brand-logo-nu span {
+  font-size: 1.15rem;
+  letter-spacing: 0.08em;
+}
+
+.account-card-number,
+.mini-card-number,
+.account-meta-row {
+  position: relative;
+  z-index: 1;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.account-card-number,
+.mini-card-number {
+  font-size: 0.86rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.account-meta-row,
+.mini-card-top,
+.mini-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.account-meta-row,
+.mini-card-footer {
+  font-size: 0.84rem;
+}
+
+.mini-account-card {
+  min-height: 184px;
+}
+
+.mini-card-top,
+.mini-card-footer,
+.account-card-header,
+.account-foot {
+  position: relative;
+  z-index: 1;
+}
+
+.mini-card-footer {
+  align-items: flex-end;
+}
+
+.mini-card-footer strong {
+  display: block;
+  font-size: 1rem;
+}
+
+.profile-photo {
+  display: block;
+  object-fit: cover;
+  box-shadow: 0 20px 42px rgba(38, 103, 255, 0.28);
+}
+
+.profile-avatar-large {
+  width: 74px;
+  height: 74px;
+}
+
+.account-list,
+.legend-list,
+.detail-grid,
+.form-grid,
+.action-grid,
+.report-summary-grid,
+.metric-grid,
+.hero-grid,
+.split-grid {
+  min-width: 0;
+}
+
+.account-carousel,
+.table-scroll,
+.sheet-scroll,
+.app-shell,
+.view-content,
+.tx-list,
+.tx-copy,
+.profile-meta,
+.auth-photo-copy {
+  min-width: 0;
+}
+
+@media (max-width: 860px) {
+  .auth-actions .btn,
+  .backup-actions .btn,
+  .detail-actions .btn,
+  .detail-actions .chip-btn,
+  .tx-toolbar .btn,
+  .account-section-head .btn {
+    width: 100%;
+  }
+
+  .app-header {
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .auth-card {
+    padding: 22px;
+  }
+
+  .auth-photo-field {
+    grid-template-columns: 1fr;
+    justify-items: start;
+  }
+
+  .tab-bar {
+    width: calc(100% - 12px);
+    padding: 10px;
+    gap: 4px;
+  }
+
+  .tab-btn {
+    flex: 1 1 0;
+  }
+
+  .tab-fab {
+    width: 60px;
+    height: 60px;
+    border-radius: 20px;
+    margin-top: -26px;
+  }
+
+  .mini-account-card {
+    min-width: 0;
+  }
+
+  .account-carousel {
+    grid-auto-columns: minmax(0, 88%);
+  }
+
+  .account-card-header,
+  .account-foot,
+  .mini-card-top,
+  .mini-card-footer,
+  .account-meta-row {
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 520px) {
+  .app-shell {
+    width: calc(100% - 10px);
+    padding-bottom: 118px;
+  }
+
+  .sheet,
+  .sheet.full-screen {
+    width: calc(100% - 6px);
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .auth-tabs {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .account-carousel {
+    grid-auto-columns: minmax(0, 92%);
+  }
+}
+
+
+
+html,
+body {
+  overflow-x: hidden;
+}
+
+.app-main,
+.view,
+.view-content,
+.hero-card,
+.metric-card,
+.section-card,
+.report-teaser,
+.profile-hero,
+.detail-hero,
+.table-shell,
+.danger-card,
+.option-row,
+.tx-item,
+.auth-card,
+.sheet,
+.account-card,
+.mini-account-card {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.account-card-header,
+.account-foot,
+.account-meta-row,
+.mini-card-top,
+.mini-card-footer,
+.brand-logo,
+.header-actions,
+.profile-pills,
+.tx-left,
+.option-row {
+  flex-wrap: wrap;
+}
+
+.account-card-number,
+.mini-card-number,
+.tx-title,
+.tx-subtitle,
+.detail-meta,
+.detail-value {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.tab-btn {
+  min-width: 0;
+}
+
+@media (max-width: 640px) {
+  .tab-bar {
+    width: calc(100% - 8px);
+    bottom: 10px;
+    padding: 8px;
+  }
+
+  .app-shell {
+    width: calc(100% - 8px);
+    padding-left: 8px;
+    padding-right: 8px;
+    padding-bottom: 112px;
+  }
+
+  .account-carousel {
+    grid-auto-columns: minmax(0, 94%);
+  }
+
+  .brand-card::after {
+    width: 56px;
+    height: 56px;
+  }
+
+  .hero-top,
+  .section-head,
+  .tx-group-head {
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 420px) {
+  .tab-btn {
+    padding: 8px 4px;
+  }
+
+  .tab-icon {
+    width: 30px;
+    height: 30px;
+  }
+
+  .account-carousel {
+    grid-auto-columns: minmax(0, 96%);
+  }
 }

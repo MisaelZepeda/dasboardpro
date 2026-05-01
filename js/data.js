@@ -3,7 +3,7 @@ export const EXPENSE_CATEGORIES = ['Alimentos', 'Transporte', 'Hogar', 'Servicio
 export const INCOME_CATEGORIES = ['Nomina', 'Freelance', 'Ventas', 'Intereses', 'Reembolso', 'Otro'];
 export const ACCOUNT_TYPES = [
   { value: 'cash', label: 'Efectivo' },
-  { value: 'bank', label: 'Bancos' },
+  { value: 'debit', label: 'Debito' },
   { value: 'credit', label: 'Tarjetas de credito' }
 ];
 export const ACCENT_PALETTES = [
@@ -101,15 +101,15 @@ export function getAccountTypeLabel(type) {
   switch (type) {
     case 'cash':
       return 'Efectivo';
+    case 'debit':
     case 'bank':
-      return 'Banco';
+      return 'Debito';
     case 'credit':
       return 'Credito';
     default:
       return 'Cuenta';
   }
 }
-
 function dateFromOffset(daysOffset = 0) {
   const value = new Date();
   value.setDate(value.getDate() + daysOffset);
@@ -124,10 +124,10 @@ function monthDate(monthOffset = 0, day = 12) {
 export function normalizeUser(raw = {}, seed = {}) {
   return {
     name: raw.name || seed.name || 'Alex Rivera',
-    email: raw.email || seed.email || 'alex@dashboardpro.app'
+    email: raw.email || seed.email || 'alex@dashboardpro.app',
+    photo: raw.photo || seed.photo || ''
   };
 }
-
 export function normalizeSettings(raw = {}) {
   return {
     ...DEFAULT_SETTINGS,
@@ -136,17 +136,19 @@ export function normalizeSettings(raw = {}) {
 }
 
 export function normalizeAccount(raw = {}) {
+  const normalizedType = raw.type === 'bank' ? 'debit' : raw.type;
   return {
     id: raw.id || uid('acc'),
     name: raw.name || 'Cuenta',
     institution: raw.institution || 'Institucion',
-    type: ['cash', 'bank', 'credit'].includes(raw.type) ? raw.type : 'bank',
+    type: ['cash', 'debit', 'credit'].includes(normalizedType) ? normalizedType : 'debit',
     last4: String(raw.last4 || '').slice(-4),
     openingBalance: safeNumber(raw.openingBalance),
-    creditLimit: safeNumber(raw.creditLimit)
+    creditLimit: safeNumber(raw.creditLimit),
+    statementDay: safeNumber(raw.statementDay),
+    paymentDay: safeNumber(raw.paymentDay)
   };
 }
-
 export function normalizeTransaction(raw = {}) {
   const kind = ['income', 'expense', 'transfer'].includes(raw.kind) ? raw.kind : 'expense';
   return {
@@ -183,24 +185,25 @@ export function cloneSnapshot(snapshot) {
 
 export function createSampleSnapshot(seedUser = {}) {
   const accounts = [
-    { id: 'acc-cash', name: 'Efectivo', institution: 'Disponible', type: 'cash', last4: '', openingBalance: 2150, creditLimit: 0 },
-    { id: 'acc-bbva', name: 'BBVA Debito', institution: 'BBVA', type: 'bank', last4: '1234', openingBalance: 11850, creditLimit: 0 },
-    { id: 'acc-ahorro', name: 'Ahorro Nu', institution: 'Nu', type: 'bank', last4: '4410', openingBalance: 32750, creditLimit: 0 },
-    { id: 'acc-credito', name: 'Tarjeta Nu', institution: 'Nu', type: 'credit', last4: '5791', openingBalance: -3650, creditLimit: 25000 }
+    { id: 'acc-cash', name: 'Efectivo', institution: 'Disponible', type: 'cash', last4: '', openingBalance: 2150, creditLimit: 0, statementDay: 0, paymentDay: 0 },
+    { id: 'acc-bbva', name: 'BBVA Debito', institution: 'BBVA', type: 'debit', last4: '1234', openingBalance: 15350, creditLimit: 0, statementDay: 0, paymentDay: 0 },
+    { id: 'acc-santander', name: 'Santander Debito', institution: 'Santander', type: 'debit', last4: '9132', openingBalance: 8780, creditLimit: 0, statementDay: 0, paymentDay: 0 },
+    { id: 'acc-nu', name: 'Tarjeta Nu', institution: 'Nu', type: 'credit', last4: '5791', openingBalance: -3250, creditLimit: 25000, statementDay: 7, paymentDay: 23 },
+    { id: 'acc-banamex', name: 'Banamex Oro', institution: 'Banamex', type: 'credit', last4: '3546', openingBalance: -1980, creditLimit: 18000, statementDay: 12, paymentDay: 27 }
   ];
 
   const transactions = [
-    { id: uid('tx'), kind: 'income', description: 'Nomina principal', category: 'Nomina', amount: 28450, accountId: 'acc-bbva', date: dateFromOffset(-2), notes: 'Ingreso quincenal' },
-    { id: uid('tx'), kind: 'income', description: 'Proyecto freelance', category: 'Freelance', amount: 6500, accountId: 'acc-bbva', date: dateFromOffset(-10), notes: '' },
+    { id: uid('tx'), kind: 'income', description: 'Sueldo', category: 'Nomina', amount: 28450, accountId: 'acc-bbva', date: dateFromOffset(-2), notes: 'Ingreso quincenal' },
+    { id: uid('tx'), kind: 'income', description: 'Freelance Project', category: 'Freelance', amount: 6500, accountId: 'acc-bbva', date: dateFromOffset(-10), notes: '' },
     { id: uid('tx'), kind: 'expense', description: 'Supermercado', category: 'Alimentos', amount: 1230, accountId: 'acc-bbva', date: dateFromOffset(-1), paid: true, notes: '' },
-    { id: uid('tx'), kind: 'expense', description: 'Cafe de la tarde', category: 'Alimentos', amount: 95, accountId: 'acc-cash', date: dateFromOffset(0), paid: true, notes: '' },
+    { id: uid('tx'), kind: 'expense', description: 'Uber', category: 'Transporte', amount: 125, accountId: 'acc-cash', date: dateFromOffset(0), paid: true, notes: '' },
     { id: uid('tx'), kind: 'expense', description: 'Internet fibra', category: 'Servicios', amount: 699, accountId: 'acc-bbva', date: dateFromOffset(-6), paid: true, notes: '' },
-    { id: uid('tx'), kind: 'expense', description: 'Cena con amigos', category: 'Entretenimiento', amount: 420, accountId: 'acc-credito', date: dateFromOffset(-3), paid: true, notes: '' },
-    { id: uid('tx'), kind: 'transfer', description: 'Aporte a ahorro', category: 'Transferencia', amount: 5000, fromAccountId: 'acc-bbva', toAccountId: 'acc-ahorro', date: dateFromOffset(-5), notes: '' },
-    { id: uid('tx'), kind: 'transfer', description: 'Pago tarjeta Nu', category: 'Transferencia', amount: 1800, fromAccountId: 'acc-bbva', toAccountId: 'acc-credito', date: dateFromOffset(-8), notes: '' },
-    { id: uid('tx'), kind: 'income', description: 'Intereses ahorro', category: 'Intereses', amount: 330, accountId: 'acc-ahorro', date: monthDate(-1, 26), notes: '' },
+    { id: uid('tx'), kind: 'expense', description: 'Spotify', category: 'Entretenimiento', amount: 177, accountId: 'acc-nu', date: dateFromOffset(-3), paid: true, notes: '' },
+    { id: uid('tx'), kind: 'transfer', description: 'Fondo para gastos del mes', category: 'Transferencia', amount: 1800, fromAccountId: 'acc-bbva', toAccountId: 'acc-santander', date: dateFromOffset(-5), notes: '' },
+    { id: uid('tx'), kind: 'transfer', description: 'Transferencia a Nu', category: 'Transferencia', amount: 2000, fromAccountId: 'acc-bbva', toAccountId: 'acc-nu', date: dateFromOffset(-8), notes: '' },
+    { id: uid('tx'), kind: 'income', description: 'Reembolso de compra', category: 'Reembolso', amount: 330, accountId: 'acc-bbva', date: monthDate(-1, 26), notes: '' },
     { id: uid('tx'), kind: 'expense', description: 'Gasolina', category: 'Transporte', amount: 980, accountId: 'acc-bbva', date: monthDate(-1, 20), paid: true, notes: '' },
-    { id: uid('tx'), kind: 'expense', description: 'Streaming anual', category: 'Servicios', amount: 1599, accountId: 'acc-credito', date: monthDate(-1, 14), paid: true, notes: '' },
+    { id: uid('tx'), kind: 'expense', description: 'Pago de servicio', category: 'Servicios', amount: 1599, accountId: 'acc-banamex', date: monthDate(-1, 14), paid: true, notes: '' },
     { id: uid('tx'), kind: 'income', description: 'Venta de monitor', category: 'Ventas', amount: 4200, accountId: 'acc-bbva', date: monthDate(-2, 17), notes: '' },
     { id: uid('tx'), kind: 'expense', description: 'Consulta medica', category: 'Salud', amount: 850, accountId: 'acc-bbva', date: monthDate(-2, 11), paid: true, notes: '' }
   ];
@@ -209,7 +212,8 @@ export function createSampleSnapshot(seedUser = {}) {
     {
       user: {
         name: seedUser.name || 'Alex Rivera',
-        email: seedUser.email || 'alex@dashboardpro.app'
+        email: seedUser.email || 'alex@dashboardpro.app',
+        photo: seedUser.photo || ''
       },
       settings: { ...DEFAULT_SETTINGS },
       accounts,
@@ -509,3 +513,5 @@ export function getAccountStatementRows(snapshot, selectedMonth = monthKey()) {
     };
   });
 }
+
+

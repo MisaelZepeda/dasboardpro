@@ -88,6 +88,148 @@ function applyTheme(state, refs) {
   refs.body.style.setProperty('--primary-soft', `${palette.primary}22`);
 }
 
+function getInitials(value = '') {
+  return String(value)
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join('') || 'DP';
+}
+
+function normalizeInstitution(value = '') {
+  return String(value)
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+function getAccountBrand(account) {
+  const source = normalizeInstitution(`${account.institution} ${account.name}`);
+  const baseBrands = {
+    bbva: { key: 'bbva', name: 'BBVA', start: '#0f45ff', end: '#0b77ff' },
+    santander: { key: 'santander', name: 'Santander', start: '#b30017', end: '#ef4444' },
+    nu: { key: 'nu', name: 'Nu', start: '#5b16d0', end: '#9f2fff' },
+    banamex: { key: 'banamex', name: 'Banamex', start: '#0f2d75', end: '#1f5eea' },
+    banorte: { key: 'banorte', name: 'Banorte', start: '#981b1e', end: '#ef4444' },
+    hsbc: { key: 'hsbc', name: 'HSBC', start: '#6b0f0f', end: '#dc2626' },
+    klar: { key: 'klar', name: 'Klar', start: '#0f172a', end: '#334155' },
+    stori: { key: 'stori', name: 'Stori', start: '#881337', end: '#ec4899' },
+    mercado: { key: 'mercado', name: 'Mercado Pago', start: '#0ea5e9', end: '#2563eb' }
+  };
+
+  let brand = { key: account.type, name: account.institution, start: '#1f4ed8', end: '#60a5fa' };
+  if (source.includes('bbva')) brand = baseBrands.bbva;
+  else if (source.includes('santander')) brand = baseBrands.santander;
+  else if (source.includes('banamex') || source.includes('citibanamex')) brand = baseBrands.banamex;
+  else if (source.includes('banorte')) brand = baseBrands.banorte;
+  else if (source.includes('hsbc')) brand = baseBrands.hsbc;
+  else if (source.includes('klar')) brand = baseBrands.klar;
+  else if (source.includes('stori')) brand = baseBrands.stori;
+  else if (source.includes('mercado')) brand = baseBrands.mercado;
+  else if (source.includes('nu')) brand = baseBrands.nu;
+  else if (account.type === 'cash') brand = { key: 'cash', name: 'Disponible', start: '#0f9f73', end: '#34d399' };
+  else if (account.type === 'credit') brand = { key: 'credit', name: account.institution, start: '#5b21b6', end: '#8b5cf6' };
+  else if (account.type === 'debit') brand = { key: 'debit', name: account.institution, start: '#1d4ed8', end: '#2563eb' };
+
+  return {
+    ...brand,
+    label: account.type === 'credit' ? 'Credito' : account.type === 'debit' ? 'Debito' : 'Efectivo'
+  };
+}
+
+function buildBrandLogo(brand) {
+  if (brand.key === 'santander') {
+    return '<div class="brand-logo brand-logo-santander"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3c2.9 3 4.8 5.4 4.8 8.2A4.8 4.8 0 1 1 7.2 11c0-2.8 1.9-5.2 4.8-8Z" fill="currentColor"/><path d="M12 7.4c1.3 1.4 2.2 2.7 2.2 4.1a2.2 2.2 0 1 1-4.4 0c0-1.4.9-2.7 2.2-4.1Z" fill="white" fill-opacity="0.24"/></svg><span>Santander</span></div>';
+  }
+  if (brand.key === 'banamex') {
+    return '<div class="brand-logo brand-logo-banamex"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="6.5" stroke="currentColor" stroke-width="1.8"/><path d="M12 4v16M4 12h16M6.6 6.6l10.8 10.8M17.4 6.6 6.6 17.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Banamex</span></div>';
+  }
+  if (brand.key === 'nu') {
+    return '<div class="brand-logo brand-logo-nu"><span>NU</span></div>';
+  }
+  if (brand.key === 'bbva') {
+    return '<div class="brand-logo brand-logo-bbva"><span>BBVA</span></div>';
+  }
+  return `<div class="brand-logo"><span>${escapeHtml(brand.name)}</span></div>`;
+}
+
+function buildProfileAvatar(user, className = '') {
+  if (user.photo) {
+    return `<img class="profile-photo ${className}" src="${escapeHtml(user.photo)}" alt="Foto de perfil de ${escapeHtml(user.name)}" />`;
+  }
+  return `<div class="avatar-badge ${className}">${escapeHtml(getInitials(user.name))}</div>`;
+}
+
+function buildAccountChrome(account, compact = false) {
+  const brand = getAccountBrand(account);
+  const metaRight = account.type === 'credit'
+    ? `${account.statementDay ? `Corte ${account.statementDay}` : 'Sin corte'}${account.paymentDay ? ` · Pago ${account.paymentDay}` : ''}`
+    : account.last4 ? `**** ${account.last4}` : 'Disponible';
+  const balanceTone = account.currentBalance >= 0 ? 'tone-income' : 'tone-expense';
+
+  if (compact) {
+    return `
+      <button class="mini-account-card brand-card brand-${brand.key}" style="--brand-start:${brand.start}; --brand-end:${brand.end};" type="button" data-account-id="${account.id}">
+        <div class="mini-card-top">
+          ${buildBrandLogo(brand)}
+          <span class="mini-card-chip">${escapeHtml(brand.label)}</span>
+        </div>
+        <div class="mini-card-number">${escapeHtml(metaRight)}</div>
+        <div class="account-balance ${balanceTone}">${escapeHtml(formatCurrency(account.currentBalance))}</div>
+        <div class="mini-card-footer">
+          <strong>${escapeHtml(account.name)}</strong>
+          <span>${escapeHtml(account.type === 'credit' ? `Limite ${formatCurrency(account.creditLimit)}` : account.institution)}</span>
+        </div>
+      </button>
+    `;
+  }
+
+  return `
+    <button class="account-card brand-card brand-${brand.key} ${account.type}" style="--brand-start:${brand.start}; --brand-end:${brand.end};" type="button" data-account-id="${account.id}">
+      <div class="account-card-header">
+        ${buildBrandLogo(brand)}
+        <span class="account-pill">${escapeHtml(brand.label)}</span>
+      </div>
+      <div class="account-card-number">${escapeHtml(metaRight)}</div>
+      <div class="account-balance ${balanceTone}">${escapeHtml(formatCurrency(account.currentBalance))}</div>
+      <div class="account-meta-row">
+        <span>${escapeHtml(account.institution)}</span>
+        <span>${escapeHtml(account.type === 'credit' ? `Disponible ${formatCurrency(account.availableCredit)}` : account.last4 ? `**** ${account.last4}` : 'Lista para usar')}</span>
+      </div>
+      <div class="account-foot">
+        <span>${escapeHtml(account.name)}</span>
+        <span>${escapeHtml(account.type === 'credit' && account.paymentDay ? `Pago ${account.paymentDay}` : account.typeLabel)}</span>
+      </div>
+    </button>
+  `;
+}
+
+function renderAuthPanels(refs, state) {
+  if (!refs.authLoginForm || !refs.authRegisterForm || !refs.authTabLogin || !refs.authTabRegister || !refs.registerPhotoPreview) {
+    return;
+  }
+
+  const registerMode = state.ui.authMode === 'register';
+  refs.authLoginForm.classList.toggle('hidden', registerMode);
+  refs.authRegisterForm.classList.toggle('hidden', !registerMode);
+  refs.authTabLogin.classList.toggle('is-active', !registerMode);
+  refs.authTabRegister.classList.toggle('is-active', registerMode);
+  refs.authTabLogin.setAttribute('aria-selected', String(!registerMode));
+  refs.authTabRegister.setAttribute('aria-selected', String(registerMode));
+  refs.authShell.classList.toggle('auth-shell-overlay', state.sessionActive && state.ui.authPromptOpen);
+
+  const previewName = refs.registerName?.value || state.ui.pendingRegistration?.name || 'Alex Rivera';
+  if (state.ui.pendingProfileImage) {
+    refs.registerPhotoPreview.classList.add('has-image');
+    refs.registerPhotoPreview.innerHTML = `<img src="${escapeHtml(state.ui.pendingProfileImage)}" alt="Vista previa del perfil" />`;
+  } else {
+    refs.registerPhotoPreview.classList.remove('has-image');
+    refs.registerPhotoPreview.textContent = getInitials(previewName);
+  }
+}
+
 function buildTransactionRow(snapshot, transaction) {
   const details = describeTransaction(snapshot, transaction);
   return `
@@ -105,24 +247,7 @@ function buildTransactionRow(snapshot, transaction) {
 }
 
 function buildAccountCard(account) {
-  const extraLabel = account.type === 'credit' ? 'Disponible' : 'Saldo actual';
-  const extraValue = account.type === 'credit' ? formatCurrency(account.availableCredit) : account.last4 ? `**** ${account.last4}` : account.institution;
-  return `
-    <button class="account-card ${account.type}" type="button" data-account-id="${account.id}">
-      <div class="account-card-header">
-        <div>
-          <strong>${escapeHtml(account.name)}</strong>
-          <small>${escapeHtml(account.institution)}</small>
-        </div>
-        <span class="account-pill">${escapeHtml(account.typeLabel)}</span>
-      </div>
-      <div class="account-balance ${account.currentBalance >= 0 ? 'tone-income' : 'tone-expense'}">${escapeHtml(formatCurrency(account.currentBalance))}</div>
-      <div class="account-foot">
-        <span>${escapeHtml(extraLabel)}</span>
-        <span>${escapeHtml(extraValue)}</span>
-      </div>
-    </button>
-  `;
+  return buildAccountChrome(account, false);
 }
 
 function renderHome(refs, state) {
@@ -135,7 +260,7 @@ function renderHome(refs, state) {
   const summary = getMonthlySummary(state.snapshot, currentMonth);
   const accounts = getAccountsWithBalances(state.snapshot);
   const categories = getExpenseCategoryBreakdown(state.snapshot, currentMonth);
-  const topAccounts = accounts.slice(0, 4);
+  const topAccounts = accounts.slice(0, 5);
 
   refs.homeContent.innerHTML = `
     <div class="hero-grid">
@@ -207,14 +332,7 @@ function renderHome(refs, state) {
         </div>
         ${topAccounts.length ? `
           <div class="account-carousel">
-            ${topAccounts.map((account) => `
-              <button class="mini-account-card" type="button" data-account-id="${account.id}">
-                <span>${escapeHtml(account.typeLabel)}</span>
-                <strong>${escapeHtml(account.name)}</strong>
-                <div class="account-balance ${account.currentBalance >= 0 ? 'tone-income' : 'tone-expense'}">${escapeHtml(formatCurrency(account.currentBalance))}</div>
-                <small>${escapeHtml(account.institution)} ${account.last4 ? `| **** ${account.last4}` : ''}</small>
-              </button>
-            `).join('')}
+            ${topAccounts.map((account) => buildAccountChrome(account, true)).join('')}
           </div>
         ` : `<div class="empty-card"><h3>Sin cuentas</h3><p>Agrega tu primera cuenta desde el boton central.</p></div>`}
       </article>
@@ -234,7 +352,7 @@ function renderTransactions(refs, state) {
   refs.transactionsContent.innerHTML = `
     <div class="tx-toolbar">
       <div>
-        <p class="eyebrow">Pantalla 2</p>
+        <p class="eyebrow">Historial</p>
         <h2>Transacciones</h2>
       </div>
       <button class="btn btn-secondary btn-small" type="button" data-action="open-quick-action">Nuevo</button>
@@ -268,14 +386,14 @@ function renderAccounts(refs, state) {
   const accounts = getAccountsWithBalances(state.snapshot);
   const groups = [
     { key: 'cash', title: 'Efectivo' },
-    { key: 'bank', title: 'Bancos' },
+    { key: 'debit', title: 'Debito' },
     { key: 'credit', title: 'Tarjetas de credito' }
   ];
 
   refs.accountsContent.innerHTML = `
     <div class="account-section-head">
       <div>
-        <p class="eyebrow">Pantalla 3</p>
+        <p class="eyebrow">Cuentas</p>
         <h3>Mis cuentas</h3>
         <p>Gestiona efectivo, bancos y lineas de credito.</p>
       </div>
@@ -307,7 +425,7 @@ function renderProfile(refs, state) {
 
   refs.profileContent.innerHTML = `
     <article class="profile-hero">
-      <div class="avatar-badge">${escapeHtml(firstName(user.name).slice(0, 2).toUpperCase())}</div>
+      ${buildProfileAvatar(user)}
       <div class="profile-meta">
         <h3>${escapeHtml(user.name)}</h3>
         <span>${escapeHtml(user.email)}</span>
@@ -516,6 +634,18 @@ function renderAccountDetail(refs, state) {
           <span class="detail-value">${escapeHtml(account.type === 'credit' ? formatCurrency(account.creditLimit) : 'No aplica')}</span>
         </div>
       </div>
+      ${account.type === 'credit' ? `
+        <div class="detail-row">
+          <div>
+            <span class="detail-meta">Fecha de corte</span>
+            <span class="detail-value">${escapeHtml(account.statementDay ? `Dia ${account.statementDay}` : 'Sin definir')}</span>
+          </div>
+          <div>
+            <span class="detail-meta">Fecha de pago</span>
+            <span class="detail-value">${escapeHtml(account.paymentDay ? `Dia ${account.paymentDay}` : 'Sin definir')}</span>
+          </div>
+        </div>
+      ` : ''}
     </div>
     <article class="section-card">
       <div class="section-head">
@@ -729,15 +859,15 @@ function renderHeader(refs, state) {
     refs.headerTitle.textContent = `Hola, ${firstName(state.snapshot.user.name)}`;
   }
   if (activeView === 'transactions') {
-    refs.headerEyebrow.textContent = 'Pantalla 2';
+    refs.headerEyebrow.textContent = 'Historial';
     refs.headerTitle.textContent = 'Transacciones';
   }
   if (activeView === 'accounts') {
-    refs.headerEyebrow.textContent = 'Pantalla 3';
+    refs.headerEyebrow.textContent = 'Cuentas';
     refs.headerTitle.textContent = 'Mis cuentas';
   }
   if (activeView === 'profile') {
-    refs.headerEyebrow.textContent = 'Pantalla 9';
+    refs.headerEyebrow.textContent = 'Perfil';
     refs.headerTitle.textContent = 'Mi perfil';
   }
   refs.themeToggleText.textContent = state.snapshot.settings.theme === 'dark' ? 'Oscuro' : 'Claro';
@@ -778,6 +908,12 @@ export function getRefs() {
     body: document.body,
     authShell: document.getElementById('authShell'),
     authModeBadge: document.getElementById('authModeBadge'),
+    authLoginForm: document.getElementById('authLoginForm'),
+    authRegisterForm: document.getElementById('authRegisterForm'),
+    authTabLogin: document.getElementById('authTabLogin'),
+    authTabRegister: document.getElementById('authTabRegister'),
+    registerName: document.getElementById('registerName'),
+    registerPhotoPreview: document.getElementById('registerPhotoPreview'),
     appShell: document.getElementById('appShell'),
     headerEyebrow: document.getElementById('headerEyebrow'),
     headerTitle: document.getElementById('headerTitle'),
@@ -845,6 +981,7 @@ export function renderApp(refs, state) {
   refs.authShell.classList.toggle('hidden', state.sessionActive && !state.ui.authPromptOpen);
   refs.appShell.classList.toggle('hidden', !state.sessionActive);
   refs.installPrompt.classList.toggle('hidden', !state.ui.installPromptEvent);
+  renderAuthPanels(refs, state);
   renderHeader(refs, state);
   toggleViews(refs, state);
   renderSelects(refs, state);
@@ -861,3 +998,5 @@ export function renderApp(refs, state) {
   renderDanger(refs, state);
   toggleSheets(refs, state);
 }
+
+

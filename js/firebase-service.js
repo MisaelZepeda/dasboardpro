@@ -74,7 +74,7 @@ export async function signInWithEmailPassword(email, password) {
   return sdk.signInWithEmailAndPassword(auth, email, password);
 }
 
-export async function registerWithEmailPassword(name, email, password) {
+export async function registerWithEmailPassword(name, email, password, photo = '') {
   if (!(await ensureFirebaseSdk())) {
     throw new Error('Firebase aun no esta configurado para este proyecto.');
   }
@@ -112,3 +112,5 @@ export async function deleteCurrentUserAccount() {
   await sdk.remove(userReference);
   await sdk.deleteUser(currentUser);
 }
+
+
