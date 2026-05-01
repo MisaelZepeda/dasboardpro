@@ -1,237 +1,496 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#2667ff" />
+    <meta name="description" content="Dashboard Pro: gestion financiera personal moderna y en tiempo real." />
     <title>Dashboard Pro</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="manifest" href="manifest.json">
-</head>
-<body data-theme="dark">
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" href="./assets/icon-192.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="./assets/icon-192.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./css/styles.css" />
+  </head>
+  <body data-theme="light" data-density="comfortable">
+    <div class="ambient-glow ambient-glow-one"></div>
+    <div class="ambient-glow ambient-glow-two"></div>
+    <div class="ambient-grid"></div>
 
-    <!-- PANTALLA DE CARGA ANIMADA -->
-    <div id="loader" style="display: none;">
-        <div class="loading-wrapper">
-            <div class="loading-text">LOADING...</div>
-            <div class="progress-capsule">
-                <div class="progress-segment"></div>
-                <div class="progress-segment"></div>
-                <div class="progress-segment"></div>
-                <div class="progress-segment"></div>
-                <div class="progress-segment"></div>
-            </div>
-            <p id="fraseMotivadora"></p>
+    <div id="toastRegion" class="toast-region" aria-live="polite" aria-atomic="true"></div>
+
+    <section id="authShell" class="auth-shell">
+      <div class="auth-card">
+        <div class="auth-brand">
+          <span class="brand-pill">Dashboard Pro</span>
+          <span id="authModeBadge" class="cloud-pill">Inicializando</span>
         </div>
+        <h1>Tu dinero con una experiencia clara, elegante y accionable.</h1>
+        <p class="auth-copy">
+          Gestiona ingresos, gastos, cuentas, movimientos y reportes desde una PWA mobile first inspirada en fintech modernas.
+        </p>
+        <form id="authForm" class="auth-form">
+          <label class="field">
+            <span>Nombre</span>
+            <input id="authName" name="name" type="text" placeholder="Alex Rivera" autocomplete="name" />
+          </label>
+          <label class="field">
+            <span>Correo</span>
+            <input id="authEmail" name="email" type="email" placeholder="alex@email.com" autocomplete="email" />
+          </label>
+          <label class="field">
+            <span>Contrasena</span>
+            <input id="authPassword" name="password" type="password" placeholder="********" autocomplete="current-password" />
+          </label>
+          <div class="auth-actions">
+            <button type="button" class="btn btn-primary" data-action="sign-in">Entrar</button>
+            <button type="button" class="btn btn-secondary" data-action="register">Crear cuenta</button>
+            <button type="button" class="btn btn-ghost" data-action="continue-local">Modo demo</button>
+          </div>
+        </form>
+        <p class="helper-note">
+          Completa <code>js/config/firebase-config.js</code> para activar Firebase Authentication y Realtime Database. Mientras tanto, la app funciona en modo local con backup y PDF.
+        </p>
+      </div>
+    </section>
+
+    <div id="installPrompt" class="install-prompt hidden">
+      <div>
+        <strong>Instala Dashboard Pro</strong>
+        <p>Abrela como app nativa y sigue operando con una experiencia mas fluida.</p>
+      </div>
+      <button id="installButton" class="btn btn-primary btn-small" type="button">Instalar</button>
     </div>
 
-    <!-- PANTALLA DE AUTENTICACIÓN -->
-    <div id="loginScreen" class="auth-container" style="display: none;">
-        <div class="auth-card glass">
-            <h2 style="font-weight: 800; letter-spacing: -1px;">DASHBOARD <span style="color: var(--primary);">PRO</span></h2>
-            
-            <form id="loginForm" onsubmit="event.preventDefault(); handleLogin();">
-                <input type="email" id="logEmail" placeholder="Correo Electrónico" required>
-                <input type="password" id="logPass" placeholder="Contraseña" required>
-                <button type="submit" class="btn-primary">Ingresar</button>
-                <p class="auth-link" onclick="toggleAuthForm('register')">¿No tienes cuenta? Crea una aquí</p>
-            </form>
-
-            <form id="registerForm" style="display: none;" onsubmit="event.preventDefault(); handleRegistro();">
-                <input type="text" id="regNombre" placeholder="Tu Nombre" required>
-                <input type="email" id="regEmail" placeholder="Correo Electrónico" required>
-                <input type="password" id="regPass" placeholder="Contraseña" required>
-                <button type="submit" class="btn-primary">Registrarme</button>
-                <p class="auth-link" onclick="toggleAuthForm('login')">Ya tengo cuenta</p>
-            </form>
+    <div id="appShell" class="app-shell hidden">
+      <header class="app-header">
+        <div>
+          <p id="headerEyebrow" class="eyebrow">Resumen financiero</p>
+          <h1 id="headerTitle">Hola, Alex</h1>
         </div>
+        <div class="header-actions">
+          <button id="reportShortcut" class="icon-btn" type="button" data-action="open-reports" aria-label="Abrir reportes">
+            <span>PDF</span>
+          </button>
+          <button id="themeToggle" class="icon-btn" type="button" data-action="toggle-theme" aria-label="Cambiar tema">
+            <span id="themeToggleText">Claro</span>
+          </button>
+        </div>
+      </header>
+
+      <main class="app-main">
+        <section class="view is-active" data-view="home">
+          <div id="homeContent" class="view-content"></div>
+        </section>
+        <section class="view" data-view="transactions">
+          <div id="transactionsContent" class="view-content"></div>
+        </section>
+        <section class="view" data-view="accounts">
+          <div id="accountsContent" class="view-content"></div>
+        </section>
+        <section class="view" data-view="profile">
+          <div id="profileContent" class="view-content"></div>
+        </section>
+      </main>
+
+      <nav class="tab-bar" aria-label="Navegacion principal">
+        <button class="tab-btn is-active" type="button" data-view="home">
+          <span class="tab-icon">01</span>
+          <span>Resumen</span>
+        </button>
+        <button class="tab-btn" type="button" data-view="transactions">
+          <span class="tab-icon">02</span>
+          <span>Transacciones</span>
+        </button>
+        <button class="tab-fab" type="button" data-action="open-quick-action" aria-label="Nuevo movimiento">
+          <span>+</span>
+        </button>
+        <button class="tab-btn" type="button" data-view="accounts">
+          <span class="tab-icon">03</span>
+          <span>Cuentas</span>
+        </button>
+        <button class="tab-btn" type="button" data-view="profile">
+          <span class="tab-icon">04</span>
+          <span>Perfil</span>
+        </button>
+      </nav>
     </div>
 
-    <!-- APLICACIÓN PRINCIPAL -->
-    <div id="appDashboard" class="dashboard" style="display: none;">
-        
-        <header class="header">
-            <div class="profile-trigger" onclick="toggleUserMenu(event)">
-                <img id="headerFoto" src="" alt="Perfil">
-                <div class="profile-info">
-                    <h2 id="headerGreeting">Hola!</h2>
-                    <span>⚙️ Configuración ▾</span>
-                </div>
+    <div id="sheetScrim" class="sheet-scrim hidden" data-action="close-sheet"></div>
+
+    <section id="quickActionSheet" class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <div>
+          <p class="eyebrow">Acciones rapidas</p>
+          <h2>Nuevo registro</h2>
+        </div>
+        <button class="icon-btn" type="button" data-action="close-sheet" aria-label="Cerrar">X</button>
+      </div>
+      <div class="action-grid">
+        <button class="action-card action-income" type="button" data-action="open-income">
+          <strong>Nuevo ingreso</strong>
+          <span>Registra dinero que entra</span>
+        </button>
+        <button class="action-card action-expense" type="button" data-action="open-expense">
+          <strong>Nuevo gasto</strong>
+          <span>Captura pagos y compras</span>
+        </button>
+        <button class="action-card action-transfer" type="button" data-action="open-transfer">
+          <strong>Nuevo movimiento</strong>
+          <span>Transfiere entre cuentas</span>
+        </button>
+        <button class="action-card action-account" type="button" data-action="open-account-form">
+          <strong>Nueva cuenta</strong>
+          <span>Agrega efectivo, banco o tarjeta</span>
+        </button>
+      </div>
+    </section>
+
+    <section id="expenseSheet" class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <div>
+          <p class="eyebrow">Pantalla 4</p>
+          <h2 id="expenseSheetTitle">Nuevo gasto</h2>
+        </div>
+        <button class="icon-btn" type="button" data-action="close-sheet" aria-label="Cerrar">X</button>
+      </div>
+      <form id="expenseForm" class="sheet-form">
+        <input name="id" type="hidden" />
+        <label class="field">
+          <span>Concepto</span>
+          <input name="description" type="text" placeholder="Supermercado, renta, cafe" required />
+        </label>
+        <div class="form-grid">
+          <label class="field">
+            <span>Monto</span>
+            <input name="amount" type="number" min="0" step="0.01" placeholder="0.00" required />
+          </label>
+          <label class="field">
+            <span>Categoria</span>
+            <select id="expenseCategorySelect" name="category" required></select>
+          </label>
+        </div>
+        <div class="form-grid">
+          <label class="field">
+            <span>Cuenta origen</span>
+            <select id="expenseAccountSelect" name="accountId" required></select>
+          </label>
+          <label class="field">
+            <span>Fecha</span>
+            <input name="date" type="date" required />
+          </label>
+        </div>
+        <div class="toggle-row">
+          <span>Marcar como pagado</span>
+          <label class="switch">
+            <input name="paid" type="checkbox" checked />
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+        <label class="field">
+          <span>Notas</span>
+          <textarea name="notes" rows="3" placeholder="Detalles opcionales"></textarea>
+        </label>
+        <button id="expenseSubmitButton" class="btn btn-danger btn-block" type="submit">Guardar gasto</button>
+      </form>
+    </section>
+
+    <section id="incomeSheet" class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <div>
+          <p class="eyebrow">Pantalla 5</p>
+          <h2 id="incomeSheetTitle">Nuevo ingreso</h2>
+        </div>
+        <button class="icon-btn" type="button" data-action="close-sheet" aria-label="Cerrar">X</button>
+      </div>
+      <form id="incomeForm" class="sheet-form">
+        <input name="id" type="hidden" />
+        <label class="field">
+          <span>Fuente de ingreso</span>
+          <input name="description" type="text" placeholder="Nomina, freelance, ventas" required />
+        </label>
+        <div class="form-grid">
+          <label class="field">
+            <span>Monto</span>
+            <input name="amount" type="number" min="0" step="0.01" placeholder="0.00" required />
+          </label>
+          <label class="field">
+            <span>Categoria</span>
+            <select id="incomeCategorySelect" name="category" required></select>
+          </label>
+        </div>
+        <div class="form-grid">
+          <label class="field">
+            <span>Cuenta destino</span>
+            <select id="incomeAccountSelect" name="accountId" required></select>
+          </label>
+          <label class="field">
+            <span>Fecha</span>
+            <input name="date" type="date" required />
+          </label>
+        </div>
+        <label class="field">
+          <span>Notas</span>
+          <textarea name="notes" rows="3" placeholder="Comentarios opcionales"></textarea>
+        </label>
+        <button id="incomeSubmitButton" class="btn btn-success btn-block" type="submit">Guardar ingreso</button>
+      </form>
+    </section>
+
+    <section id="transferSheet" class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <div>
+          <p class="eyebrow">Pantalla 6</p>
+          <h2 id="transferSheetTitle">Nuevo movimiento</h2>
+        </div>
+        <button class="icon-btn" type="button" data-action="close-sheet" aria-label="Cerrar">X</button>
+      </div>
+      <form id="transferForm" class="sheet-form">
+        <input name="id" type="hidden" />
+        <div class="transfer-visual">
+          <label class="field">
+            <span>De</span>
+            <select id="transferFromSelect" name="fromAccountId" required></select>
+          </label>
+          <div class="transfer-arrow">&rarr;</div>
+          <label class="field">
+            <span>Para</span>
+            <select id="transferToSelect" name="toAccountId" required></select>
+          </label>
+        </div>
+        <div class="form-grid">
+          <label class="field">
+            <span>Monto</span>
+            <input name="amount" type="number" min="0" step="0.01" placeholder="0.00" required />
+          </label>
+          <label class="field">
+            <span>Fecha</span>
+            <input name="date" type="date" required />
+          </label>
+        </div>
+        <label class="field">
+          <span>Concepto opcional</span>
+          <input name="description" type="text" placeholder="Ahorro semanal, pago de tarjeta" />
+        </label>
+        <button id="transferSubmitButton" class="btn btn-accent btn-block" type="submit">Realizar movimiento</button>
+      </form>
+    </section>
+
+    <section id="accountSheet" class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <div>
+          <p class="eyebrow">Cuentas</p>
+          <h2 id="accountSheetTitle">Nueva cuenta</h2>
+        </div>
+        <button class="icon-btn" type="button" data-action="close-sheet" aria-label="Cerrar">X</button>
+      </div>
+      <form id="accountForm" class="sheet-form">
+        <input name="id" type="hidden" />
+        <div class="form-grid">
+          <label class="field">
+            <span>Nombre</span>
+            <input name="name" type="text" placeholder="Cuenta nomina" required />
+          </label>
+          <label class="field">
+            <span>Banco o institucion</span>
+            <input name="institution" type="text" placeholder="BBVA, Nu, Efectivo" required />
+          </label>
+        </div>
+        <div class="form-grid">
+          <label class="field">
+            <span>Tipo</span>
+            <select id="accountTypeSelect" name="type" required></select>
+          </label>
+          <label class="field">
+            <span>Ultimos digitos</span>
+            <input name="last4" type="text" maxlength="4" placeholder="1234" />
+          </label>
+        </div>
+        <div class="form-grid">
+          <label class="field">
+            <span>Saldo inicial</span>
+            <input name="openingBalance" type="number" step="0.01" placeholder="0.00" required />
+          </label>
+          <label class="field">
+            <span>Limite de credito</span>
+            <input name="creditLimit" type="number" step="0.01" placeholder="0.00" />
+          </label>
+        </div>
+        <button id="accountSubmitButton" class="btn btn-primary btn-block" type="submit">Guardar cuenta</button>
+      </form>
+    </section>
+
+    <section id="reportsSheet" class="sheet full-screen">
+      <div class="sheet-header sticky-header">
+        <div>
+          <p class="eyebrow">Pantalla 7 y 12</p>
+          <h2>Reportes</h2>
+        </div>
+        <div class="header-actions">
+          <button id="exportPdfButton" class="btn btn-primary btn-small" type="button">Exportar PDF</button>
+          <button class="icon-btn" type="button" data-action="close-sheet" aria-label="Cerrar">X</button>
+        </div>
+      </div>
+      <div class="sheet-scroll">
+        <div class="inline-field">
+          <label class="field compact">
+            <span>Mes</span>
+            <input id="reportMonth" type="month" />
+          </label>
+        </div>
+        <div id="reportsSummary" class="report-summary-grid"></div>
+        <div id="reportsTables" class="stacked-content"></div>
+      </div>
+    </section>
+
+    <section id="accountDetailSheet" class="sheet full-screen">
+      <div class="sheet-header sticky-header">
+        <div>
+          <p class="eyebrow">Pantalla 8</p>
+          <h2>Detalle de cuenta</h2>
+        </div>
+        <button class="icon-btn" type="button" data-action="close-sheet" aria-label="Cerrar">X</button>
+      </div>
+      <div id="accountDetailContent" class="sheet-scroll"></div>
+    </section>
+
+    <section id="transactionDetailSheet" class="sheet full-screen">
+      <div class="sheet-header sticky-header">
+        <div>
+          <p class="eyebrow">Movimiento</p>
+          <h2>Detalle</h2>
+        </div>
+        <button class="icon-btn" type="button" data-action="close-sheet" aria-label="Cerrar">X</button>
+      </div>
+      <div id="transactionDetailContent" class="sheet-scroll"></div>
+    </section>
+
+    <section id="personalizationSheet" class="sheet full-screen">
+      <div class="sheet-header sticky-header">
+        <div>
+          <p class="eyebrow">Pantalla 10</p>
+          <h2>Personalizacion</h2>
+        </div>
+        <button class="icon-btn" type="button" data-action="close-sheet" aria-label="Cerrar">X</button>
+      </div>
+      <div class="sheet-scroll">
+        <div class="settings-card">
+          <div class="settings-row">
+            <div>
+              <strong>Color principal</strong>
+              <p>Elige una paleta para personalizar el panel.</p>
             </div>
-            <button onclick="toggleTheme()" class="theme-toggle">🌓</button>
-            
-            <div id="userMenu" class="user-menu-dropdown glass">
-                <p onclick="cambiarTab('perfil'); closeDropdowns();">⚙️ Perfil</p>
-                <p onclick="exportarBackup()">💾 Backup</p>
-                <p onclick="handleLogout()" style="color: var(--danger);">🚪 Salir</p>
+            <div id="accentPalette" class="palette-grid"></div>
+          </div>
+          <div class="settings-row">
+            <div>
+              <strong>Modo oscuro</strong>
+              <p>Ideal para sesiones largas y ambientes nocturnos.</p>
             </div>
-        </header>
+            <label class="switch">
+              <input id="themeSwitch" type="checkbox" />
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+          <div class="settings-row">
+            <div>
+              <strong>Vista</strong>
+              <p>Cambia entre un layout comodo o compacto.</p>
+            </div>
+            <div class="segmented" id="densitySelector">
+              <button type="button" data-density="comfortable">Comoda</button>
+              <button type="button" data-density="compact">Compacta</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
 
-        <main class="main-content" onclick="closeDropdowns()">
-            
-            <!-- RESUMEN (ESTILO PREMIUM) -->
-            <section id="tab-resumen" class="tab-content active">
-                <div class="card card-main-balance">
-                    <div class="balance-header">
-                        <p>PATRIMONIO TOTAL</p>
-                        <span>ⓘ</span>
-                    </div>
-                    <h1 id="valPatrimonio">$0.00</h1>
-                    <div class="balance-stats">
-                        <span class="stat-badge">↑ 12.5% vs mes anterior</span>
-                    </div>
-                </div>
+    <section id="backupSheet" class="sheet full-screen">
+      <div class="sheet-header sticky-header">
+        <div>
+          <p class="eyebrow">Pantalla 11</p>
+          <h2>Backup y restauracion</h2>
+        </div>
+        <button class="icon-btn" type="button" data-action="close-sheet" aria-label="Cerrar">X</button>
+      </div>
+      <div class="sheet-scroll">
+        <div class="settings-card">
+          <div class="settings-row vertical">
+            <div>
+              <strong>Ultimo backup</strong>
+              <p id="lastBackupLabel">Sin respaldo reciente</p>
+            </div>
+          </div>
+          <div class="backup-actions">
+            <button id="createBackupButton" class="btn btn-primary" type="button">Crear backup</button>
+            <button id="restoreBackupButton" class="btn btn-secondary" type="button">Restaurar backup</button>
+            <button id="exportJsonButton" class="btn btn-ghost" type="button">Exportar datos JSON</button>
+          </div>
+          <input id="restoreBackupInput" type="file" accept="application/json" hidden />
+          <div class="security-note">
+            <strong>Mensaje de seguridad</strong>
+            <p>Tus respaldos contienen informacion financiera sensible. Guarda el archivo en una ubicacion segura.</p>
+          </div>
+        </div>
+      </div>
+    </section>
 
-                <div class="quick-stats">
-                    <div class="card glass stat-card">
-                        <small style="color: var(--success);">INGRESOS</small>
-                        <h3 id="homeIngresos">$0.00</h3>
-                    </div>
-                    <div class="card glass stat-card">
-                        <small style="color: var(--danger);">GASTOS</small>
-                        <h3 id="homeGastos">$0.00</h3>
-                    </div>
-                </div>
+    <section id="securitySheet" class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <div>
+          <p class="eyebrow">Seguridad</p>
+          <h2>Sesion y proteccion</h2>
+        </div>
+        <button class="icon-btn" type="button" data-action="close-sheet" aria-label="Cerrar">X</button>
+      </div>
+      <div id="securityContent" class="sheet-form"></div>
+    </section>
 
-                <div class="card glass">
-                    <h4>Distribución de Gastos</h4>
-                    <div style="height: 200px;"><canvas id="chartGastos"></canvas></div>
-                </div>
+    <section id="helpSheet" class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <div>
+          <p class="eyebrow">Ayuda</p>
+          <h2>Uso rapido</h2>
+        </div>
+        <button class="icon-btn" type="button" data-action="close-sheet" aria-label="Cerrar">X</button>
+      </div>
+      <div class="sheet-form">
+        <div class="info-card">
+          <strong>Registro rapido</strong>
+          <p>Usa el boton central para capturar ingresos, gastos, movimientos o crear una nueva cuenta.</p>
+        </div>
+        <div class="info-card">
+          <strong>Reportes</strong>
+          <p>Abre Reportes para filtrar por mes y exportar un estado de cuenta PDF con tablas y resumen.</p>
+        </div>
+      </div>
+    </section>
 
-                <div class="card glass">
-                    <h4>Mis Cuentas y Tarjetas</h4>
-                    <div class="accounts-stack">
-                        <div class="account-group">
-                            <small class="group-label label-debito">DÉBITO / EFECTIVO</small>
-                            <div id="widgetDebitos"></div>
-                        </div>
-                        <div class="account-group">
-                            <small class="group-label label-credito">CRÉDITO</small>
-                            <div id="widgetCreditos"></div>
-                        </div>
-                    </div>
-                </div>
+    <section id="dangerSheet" class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <div>
+          <p class="eyebrow">Zona de peligro</p>
+          <h2>Confirmacion</h2>
+        </div>
+        <button class="icon-btn" type="button" data-action="close-sheet" aria-label="Cerrar">X</button>
+      </div>
+      <div id="dangerContent" class="sheet-form"></div>
+    </section>
 
-                <!-- REPORTE PDF INTEGRADO -->
-                <div class="card glass pdf-section">
-                    <h4>📄 Estado de Cuenta</h4>
-                    <div class="pdf-controls">
-                        <input type="month" id="mesReporte">
-                        <button class="btn-primary btn-small" onclick="generarPDFMes()">Generar</button>
-                    </div>
-                </div>
-            </section>
-
-            <!-- GASTOS -->
-            <section id="tab-gastos" class="tab-content">
-                <div class="card glass">
-                    <h3 id="gastoFormTitle">Nuevo Gasto</h3>
-                    <form onsubmit="handleGasto(event)">
-                        <input type="number" id="gaMonto" placeholder="Monto ($)" step="0.01" required>
-                        <input type="text" id="gaDesc" placeholder="Concepto" required>
-                        <select id="gaCat" required>
-                            <option value="Comida">Comida</option>
-                            <option value="Servicios">Servicios</option>
-                            <option value="Transporte">Transporte</option>
-                            <option value="Vivienda">Vivienda</option>
-                            <option value="Ocio">Ocio</option>
-                            <option value="Otros">Otros</option>
-                        </select>
-                        <select id="gaFuente" required></select>
-                        <button type="submit" class="btn-primary" style="background: var(--danger);">Guardar Gasto</button>
-                    </form>
-                </div>
-                <div class="card glass"><h4>Historial</h4><div id="listaGastos"></div></div>
-            </section>
-
-            <!-- INGRESOS -->
-            <section id="tab-ingresos" class="tab-content">
-                <div class="card glass">
-                    <h3 id="ingresoFormTitle">Nuevo Ingreso</h3>
-                    <form onsubmit="handleIngreso(event)">
-                        <input type="number" id="inMonto" placeholder="Monto ($)" step="0.01" required>
-                        <input type="text" id="inDesc" placeholder="Concepto" required>
-                        <select id="inCuenta" required></select>
-                        <button type="submit" class="btn-primary" style="background: var(--success);">Guardar Ingreso</button>
-                    </form>
-                </div>
-                <div class="card glass"><h4>Historial</h4><div id="listaIngresos"></div></div>
-            </section>
-
-            <!-- MOVIMIENTOS (EL BOTÓN CENTRAL) -->
-            <section id="tab-traspasos" class="tab-content">
-                <div class="card glass">
-                    <h3 id="movTitle">Transferencia</h3>
-                    <div class="mode-selector">
-                        <button id="btnModoPago" class="btn-mode active" onclick="setMovMode('pago')">Pago TDC</button>
-                        <button id="btnModoTras" class="btn-mode" onclick="setMovMode('traspaso')">Traspaso</button>
-                    </div>
-                    <form onsubmit="handleMovimiento(event)">
-                        <select id="movOrigen" required></select>
-                        <div style="text-align: center; margin: 10px 0; font-size: 20px;">↓</div>
-                        <select id="movDestino" required></select>
-                        <input type="number" id="movMonto" placeholder="Monto ($)" step="0.01" required>
-                        <button type="submit" class="btn-primary">Realizar Movimiento</button>
-                    </form>
-                </div>
-                <div class="card glass"><h4>Historial</h4><div id="listaMovimientos"></div></div>
-            </section>
-
-            <!-- CUENTAS -->
-            <section id="tab-cuentas" class="tab-content">
-                <div class="card glass">
-                    <h3>Añadir Cuenta</h3>
-                    <form onsubmit="handleNuevaCuenta(event)">
-                        <input type="text" id="cuNombre" placeholder="Nombre (Ej. Nómina)" required>
-                        <input type="text" id="cuBanco" placeholder="Banco (Ej. BBVA)" required>
-                        <select id="cuTipo" required>
-                            <option value="debito">Débito</option>
-                            <option value="credito">Crédito</option>
-                        </select>
-                        <input type="number" id="cuSaldo" placeholder="Saldo Inicial" step="0.01" required>
-                        <input type="number" id="cuPago" placeholder="Día de Corte (1-31)" min="1" max="31">
-                        <button type="submit" class="btn-primary">Crear Cuenta</button>
-                    </form>
-                </div>
-                <div class="card glass"><h4>Maestro de Cuentas</h4><div id="listaMaestraCuentas"></div></div>
-            </section>
-
-            <!-- PERFIL -->
-            <section id="tab-perfil" class="tab-content">
-                <div class="card glass perfil-header">
-                    <img id="perfDisplayFoto" src="" alt="Perfil">
-                    <h3 id="perfDisplayNombre">Usuario</h3>
-                </div>
-                <div class="card glass">
-                    <form onsubmit="handleGuardarPerfil(event)">
-                        <input type="text" id="perfNombre" placeholder="Tu Nombre" required>
-                        <div class="color-picker">
-                            <div class="color-swatch" style="background:#3b82f6;" onclick="selectColor('#3b82f6', this)"></div>
-                            <div class="color-swatch" style="background:#10b981;" onclick="selectColor('#10b981', this)"></div>
-                            <div class="color-swatch" style="background:#ef4444;" onclick="selectColor('#ef4444', this)"></div>
-                            <div class="color-swatch" style="background:#8b5cf6;" onclick="selectColor('#8b5cf6', this)"></div>
-                        </div>
-                        <button type="submit" class="btn-primary">Actualizar Perfil</button>
-                    </form>
-                </div>
-            </section>
-        </main>
-
-        <nav class="nav-bar">
-            <button class="nav-item active" onclick="cambiarTab('resumen', this)"><span>📊</span>Inicio</button>
-            <button class="nav-item" onclick="cambiarTab('ingresos', this)"><span>💰</span>Ingresos</button>
-            <button class="nav-item" onclick="cambiarTab('gastos', this)"><span>💸</span>Gastos</button>
-            <button class="nav-item" onclick="cambiarTab('traspasos', this)"><span>+</span>Mov</button>
-            <button class="nav-item" onclick="cambiarTab('cuentas', this)"><span>🏦</span>Cuentas</button>
-            <button class="nav-item" onclick="cambiarTab('presupuestos', this)"><span>📈</span>Límites</button>
-        </nav>
-    </div>
-
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-    <script src="app.js"></script>
-</body>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js" defer></script>
+    <script type="module" src="./js/app.js"></script>
+  </body>
 </html>
